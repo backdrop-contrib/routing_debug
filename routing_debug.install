@@ -16,7 +16,8 @@
  */
 function routing_debug_install() {
   $t = get_t();
-  drupal_set_message($t('Routing Debug is available on <a href="@url">/devel/routing_debug</a> page.', array('@url' => url('devel/routing_debug'))));
+  backdrop_set_message($t('Routing Debug is available on <a href="@url">/devel/routing_debug</a> page.', array('@url' => url('devel/routing_debug'))));
+  // Dynamically generated variable data was detected on the following lines.
 }
 
 /*
@@ -30,5 +31,22 @@ function routing_debug_install() {
  */
 function routing_debug_uninstall() {
   // Let's delete our own variables.
-  variable_del('routing_debug_debug_mode');
+  config_clear('routing_debug.settings', 'routing_debug_debug_mode');
+}
+
+/**
+ * Implements hook_update_last_removed().
+ */
+function routing_debug_update_last_removed() {
+  return;
+}
+
+/**
+ * Implements hook_update_N().
+ */
+function routing_debug_update_1000() {
+  $config = config('routing_debug.settings');
+  $config->set('routing_debug_debug_mode', update_variable_get('routing_debug_debug_mode', 'FALSE'));
+  $config->save();
+  update_variable_del('routing_debug_debug_mode');
 }

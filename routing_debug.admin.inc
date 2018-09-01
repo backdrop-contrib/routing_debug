@@ -13,12 +13,13 @@
  */
 function routing_debug_admin_form() {
   $form = array();
+  $form['#config'] = 'routing_debug.settings';
 
   $form['routing_debug_debug_mode'] = array(
     '#title' => t('Debug mode toggle'),
     '#type' => 'checkbox',
     '#description' => t('Toggle for debug mode. If turned on, additional debug messages are written into watchdog.'),
-    '#default_value' => variable_get('routing_debug_debug_mode', FALSE),
+    '#default_value' => config_get('routing_debug.settings', 'routing_debug_debug_mode'),
   );
 
   return system_settings_form($form);

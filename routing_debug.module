@@ -4,7 +4,7 @@
  * @file
  * File routing_debug.module.
  *
- * Module provides simple functionality - printing out Drupal routing
+ * Module provides simple functionality - printing out Backdrop routing
  * information including callback and where the callback is defined.
  */
 
@@ -37,17 +37,17 @@ function routing_debug_menu() {
 
   // Adding our menu to 'devel' group, so it's displayed under Development
   // group in Administration menu.
-  $menu_items['devel/routing_debug'] = array(
+  $menu_items['admin/devel/routing_debug'] = array(
     'title' => 'Routing debug',
     'description' => 'Get detailed information about all registered routes.',
     'page callback' => 'routing_debug_page',
     'access arguments' => array('access routing information'),
     'type' => MENU_NORMAL_ITEM,
-    'menu_name' => 'devel',
+    'menu_name' => 'management',
     'file' => 'routing_debug.pages.inc',
   );
 
-  $menu_items['devel/routing_debug/routing'] = array(
+  $menu_items['admin/devel/routing_debug/routing'] = array(
     'title' => 'Routing info',
     'description' => 'Get detailed information about all registered routes.',
     'access arguments' => array('access routing information'),
@@ -55,7 +55,7 @@ function routing_debug_menu() {
     'weight' => 1,
   );
 
-  $menu_items['devel/routing_debug/debug'] = array(
+  $menu_items['admin/devel/routing_debug/debug'] = array(
     'title' => 'Devel debug',
     'description' => 'Verbose debug page with additional information provided by Devel module.',
     'page callback' => 'routing_debug_debug_page',
@@ -65,10 +65,10 @@ function routing_debug_menu() {
     'file' => 'routing_debug.pages.inc',
   );
 
-  $menu_items['devel/routing_debug/settings'] = array(
+  $menu_items['admin/devel/routing_debug/settings'] = array(
     'title' => 'Settings',
     'description' => 'Additional settings for Routing Debug module',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('routing_debug_admin_form'),
     'access arguments' => array('access routing information'),
     'type' => MENU_LOCAL_TASK,
@@ -80,7 +80,7 @@ function routing_debug_menu() {
   $menu_items['admin/config/development/routing_debug'] = array(
     'title' => 'Routing Debug settings',
     'description' => 'Additional settings for Routing Debug module.',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('routing_debug_admin_form'),
     'access arguments' => array('access routing information'),
     'type' => MENU_NORMAL_ITEM,
@@ -124,7 +124,7 @@ function routing_debug_help($path, $arg) {
         Module also provides a block with the same routing information. Add the
         block to your preferred region to always show routing debug information
         for current path.') . '</p>';
-      $help_text .= '<p>' . t('Module interface is accessible on <a href="@url">/devel/routing_debug</a> page.', array('@url' => url('devel/routing_debug'))) . '</p>';
+      $help_text .= '<p>' . t('Module interface is accessible on <a href="@url">/admin/devel/routing_debug</a> page.', array('@url' => url('admin/devel/routing_debug'))) . '</p>';
 
       $help_text .= '<h2>' . t('README file contents') . '</h2>';
 
@@ -169,7 +169,7 @@ function routing_debug_help($path, $arg) {
 function routing_debug_block_info() {
   $routing_debug_block = array(
     'info' => t('Routing Debug'),
-    'cache' => DRUPAL_NO_CACHE,
+    'cache' => BACKDROP_NO_CACHE,
   );
 
   $blocks = array();
@@ -219,8 +219,8 @@ function _routing_debug_get_file_info($page_callback) {
   /* @var $rf ReflectionFunction */
   $rf = new ReflectionFunction($page_callback);
   $file_name = $rf->getFileName();
-  // Removing Drupal root path from the beginning of file path.
-  $file_name = substr($file_name, strlen(DRUPAL_ROOT) + 1);
+  // Removing Backdrop root path from the beginning of file path.
+  $file_name = substr($file_name, strlen(BACKDROP_ROOT) + 1);
   $line_number = $rf->getStartLine();
 
   $result = array();
@@ -230,13 +230,23 @@ function _routing_debug_get_file_info($page_callback) {
 }
 
 /**
+ * Implements hook_config_info().
+ */
+function routing_debug_config_info() {
+  $prefixes['routing_debug.settings'] = array(
+    'label' => t('Module name settings'),
+    'group' => t('Configuration'),
+  );
+}
+
+/**
  * Helper function - returns debug mode flag.
  *
  * @return bool
  *   TRUE if debug mode is enabled, FALSE otherwise.
  */
 function _routing_debug_debug_mode() {
-  return variable_get('routing_debug_debug_mode', FALSE);
+  return config_get('routing_debug.settings', 'routing_debug_debug_mode');
 }
 
 /**
@@ -252,14 +262,14 @@ function _routing_debug_block_contents() {
 
   // We render contents of the block only if the path is valid, otherwise
   // what's to write there.
-  if (drupal_valid_path($current_path)) {
+  if (backdrop_valid_path($current_path)) {
     // Let's get the whole router, because menu_get_item() doesn't give us
     // everything we need. We don't mind calling menu_get_router(), because it
     // has caching implemented.
     $menu_router = menu_get_router();
     // We need to convert specific path to generic one, e.g. user/15 to user/%,
     // otherwise we won't be able to find our path in array from
-    // menu_get_router. Also current_path() handles things like Drupal in
+    // menu_get_router. Also current_path() handles things like Backdrop in
     // a sub-folder for us, so we don't need to worry about that.
     $menu_item = menu_get_item($current_path);
     $routing_item_name = $menu_item['path'];
@@ -304,13 +314,13 @@ function _routing_debug_block_contents() {
  */
 function _routing_debug_get_path_info($routing_item_name, array $routing_item) {
   /* Let's get the correct callback first,
-   * as it might be masked behind 'drupal_get_form'. */
+   * as it might be masked behind 'backdrop_get_form'. */
 
   /* @var $menu_routing_item MenuRoutingItem */
   $menu_routing_item = new MenuRoutingItem($routing_item);
   // @TODO: Are there any other options that can mask actual callback?
   $page_callback = $menu_routing_item->getPageCallbackName();
-  if (0 == strcmp($page_callback, 'drupal_get_form')) {
+  if (0 == strcmp($page_callback, 'backdrop_get_form')) {
     $page_callback = $routing_item['page arguments'][0];
   }
 
@@ -335,7 +345,7 @@ function _routing_debug_get_path_info($routing_item_name, array $routing_item) {
 
     // Let's prepare or file parts for it's loading.
     $file_parts = pathinfo($file_name);
-    $module_path = drupal_get_path('module', $routing_item['module']);
+    $module_path = backdrop_get_path('module', $routing_item['module']);
     $incl_type = $file_parts['extension'];
     $incl_module = $routing_item['module'];
     $incl_name = substr(substr($file_name, strlen($module_path) + 1), 0, -(strlen($incl_type) + 1));
@@ -364,4 +374,14 @@ function _routing_debug_get_path_info($routing_item_name, array $routing_item) {
   $routing_info->setLine($line_number);
 
   return $routing_info;
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function routing_debug_autoload_info() {
+  return array(
+    'MenuRoutingItem' => 'includes/MenuRoutingItem.inc',
+    'RoutingInfo' => 'includes/RoutingInfo.inc',
+  );
 }

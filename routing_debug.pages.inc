@@ -26,13 +26,13 @@ function routing_debug_page() {
 
     // First part - we generate URL to /devel/menu/item of the route.
     $complex_urls = '<a href=';
-    $complex_urls .= url("devel/menu/item", array('query' => array('path' => $routing_item_name)));
+    $complex_urls .= url("admin/devel/menu/item", array('query' => array('path' => $routing_item_name)));
     $complex_urls .= '>/' . $routing_item_name . '</a>';
 
     /* And if the URL is valid path, we also generate an actual link to it.
      * The '&#8594;' is the same as $rarr; (right array) which doesn't seem
      * to work here. */
-    (drupal_valid_path($routing_item_name, FALSE)) ?
+    (backdrop_valid_path($routing_item_name, FALSE)) ?
       ($complex_urls .= ' <a href=' . url($routing_item_name) . '>&#8594;</a>') : NULL;
 
     // Let's prepare the array structure for the table.
@@ -46,7 +46,7 @@ function routing_debug_page() {
 
     $rows[$routing_item_name] = $row;
   }
-
+  asort($rows);
   // Header of the table.
   $header = array(
     'path' => t('Route (path)'),
@@ -67,7 +67,7 @@ function routing_debug_page() {
     'empty' => t('No routes available.'),
   );
 
-  // Theme it as nice Drupal table.
+  // Theme it as nice Backdrop table.
   $output = theme('table', $variables);
 
   return $output;
@@ -78,7 +78,7 @@ function routing_debug_page() {
  */
 function routing_debug_debug_page() {
 
-  $menu_names = menu_get_names();
+  $menu_names = menu_get_menus();
   $output = kprint_r($menu_names, TRUE, t('Menu names'));
   $menu_router = menu_get_router();
   $output .= kprint_r($menu_router, TRUE, t('Menu router'));
